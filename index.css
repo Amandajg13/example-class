@@ -1,5 +1,7 @@
 .content {
   width: 700px;
   margin: auto;
+  border: thin solid black;
   padding: 50px;
+  
   }
