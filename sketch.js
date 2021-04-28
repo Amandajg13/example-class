@@ -1,56 +1,58 @@
 /**
- *  Example: Convolution Reverb
- *
- *  The p5.Convolver can recreate the sound of actual spaces using convolution.
- *  
- *  Toggle between five different buffer sources
- *
- *  Convolution samples Creative Commons BY recordinghopkins, via freesound.org
- *  https://www.freesound.org/people/recordinghopkins/
+ * DEMO: Draw the waveform of a sound as it plays using p5.FFT.waveform()
  */
 
-var sound, cVerb;
-var currentIR = 0;
-var p;
+var soundFile;
+var fft;
+var fftBands = 1024;
+
+// Array of amplitude values (0-255) over time.
+var waveform = [];
 
 function preload() {
-  // we have included both MP3 and OGG versions of all the impulses/sounds
-  soundFormats('ogg', 'mp3');
-
-  // create a p5.Convolver
-  cVerb = createConvolver('../_files/bx-spring');
-
-  // add Impulse Responses to cVerb.impulses array, in addition to bx-spring
-  cVerb.addImpulse('../_files/small-plate');
-  cVerb.addImpulse('../_files/drum');
-  cVerb.addImpulse('../_files/concrete-tunnel');
-
-  // load a sound that will be processed by the p5.ConvultionReverb
-  sound = loadSound('../_files/Damscray_DancingTiger');
+  soundFormats('mp3', 'ogg');
+  soundFile = loadSound('ROM.mp3');
 }
 
 function setup() {
-  // disconnect from master output...
-  sound.disconnect();
-  // ... and process with cVerb so that we only hear the reverb
-  cVerb.process(sound);
+  createCanvas(fftBands, 256);
+  fill(255, 40, 255);
 
-  createP('Click to play a sound and change the impulse');
-  p = createP('');
+  soundFile.loop();
+
+  /**
+   *  Create an FFT object.
+   *  Accepts optional parameters for
+   *    - Smoothing 
+   *    - Length of the FFT's analyze/waveform array. Must be a power of two between 16 and 1024 (default).
+   */
+  fft = new p5.FFT(.99, fftBands);
+
+  p = createP('press any key to pause / play');
 }
 
-function mousePressed() {
+function draw() {
+  background(250);
 
-  // cycle through the array of cVerb.impulses
-  currentIR++;
-  if (currentIR >= cVerb.impulses.length) {
-    currentIR = 0;
+  /** 
+   * Analyze the sound as a waveform (amplitude over time)
+   */
+  waveform = fft.waveform();
+
+  // Draw snapshot of the waveform
+  beginShape();
+  for (var i = 0; i< waveform.length; i++){
+    stroke(5);
+    strokeWeight(5);
+    vertex(i*2, waveform[i]);
   }
-  cVerb.toggleImpulse(currentIR);
+  endShape();
+}
 
-  // play the sound through the impulse
-  sound.play();
-
-  // display the current Impulse Response name (the filepath)
-  p.html('Convolution Impulse Response: ' + cVerb.impulses[currentIR].name);
+function keyPressed() {
+  if (soundFile.isPlaying() ) {
+    soundFile.pause();
+  } else {
+    soundFile.play();
+  }
 }
