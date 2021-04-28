@@ -1,58 +1,41 @@
-/**
- * DEMO: Draw the waveform of a sound as it plays using p5.FFT.waveform()
- */
+var carrier, modulator;
 
-var soundFile;
-var fft;
-var fftBands = 1024;
+// carrier frequency signal, a p5.Signal
+var carrierFreq;
 
-// Array of amplitude values (0-255) over time.
-var waveform = [];
+// modulator frequency signal, a p5.Signal
+var modFreq;
 
-function preload() {
-  soundFormats('mp3', 'ogg');
-  soundFile = loadSound('ROM.mp3');
-}
+
+// output envelope
+var env;
 
 function setup() {
-  createCanvas(fftBands, 256);
-  fill(255, 40, 255);
+  carrier = new p5.Oscillator();
 
-  soundFile.loop();
+  carrierFreq = new p5.Signal(240);
+  carrier.freq(carrierFreq);
+  carrier.start();
 
-  /**
-   *  Create an FFT object.
-   *  Accepts optional parameters for
-   *    - Smoothing 
-   *    - Length of the FFT's analyze/waveform array. Must be a power of two between 16 and 1024 (default).
-   */
-  fft = new p5.FFT(.99, fftBands);
+  env = new p5.Env(0.05, 1, 0.5, 0);
+  carrier.amp(env);
 
-  p = createP('press any key to pause / play');
+  modulator = new p5.Oscillator();
+  modulator.disconnect();
+  modFreq = new p5.SignalMult(8);
+  modFreq.setInput(carrierFreq);
+  modulator.freq(modFreq);
+  modulator.start();
+
+  var m1 = new p5.SignalMult();
+  m1.setInput(modulator);
+  m1.setValue(100);
 }
 
 function draw() {
-  background(250);
-
-  /** 
-   * Analyze the sound as a waveform (amplitude over time)
-   */
-  waveform = fft.waveform();
-
-  // Draw snapshot of the waveform
-  beginShape();
-  for (var i = 0; i< waveform.length; i++){
-    stroke(5);
-    strokeWeight(5);
-    vertex(i*2, waveform[i]);
-  }
-  endShape();
+  carrierFreq.fade(mouseX);
 }
 
-function keyPressed() {
-  if (soundFile.isPlaying() ) {
-    soundFile.pause();
-  } else {
-    soundFile.play();
-  }
+function mousePressed() {
+  env.play();
 }
